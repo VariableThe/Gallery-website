@@ -2,12 +2,21 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ZoomIn } from "lucide-react";
-import Image from "next/image";
+import { X } from "lucide-react";
+import { RowsPhotoAlbum } from "react-photo-album";
+import "react-photo-album/rows.css";
 import { NextcloudFile } from "@/lib/nextcloud";
 
 export default function GalleryClient({ photos }: { photos: NextcloudFile[] }) {
   const [selectedPhoto, setSelectedPhoto] = useState<NextcloudFile | null>(null);
+
+  const albumPhotos = photos.map(p => ({
+    src: p.url,
+    width: p.width || 600,
+    height: p.height || 400,
+    alt: p.name,
+    original: p // keep original for lightbox
+  }));
 
   return (
     <div className="w-full">
@@ -21,45 +30,32 @@ export default function GalleryClient({ photos }: { photos: NextcloudFile[] }) {
           </p>
         </div>
       ) : (
-        <motion.div 
-          className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-6 space-y-6"
-          initial="hidden"
-          animate="show"
-          variants={{
-            hidden: { opacity: 0 },
-            show: {
-              opacity: 1,
-              transition: { staggerChildren: 0.1 }
-            }
-          }}
-        >
-          {photos.map((photo, i) => (
-            <motion.div
-              key={photo.url}
-              variants={{
-                hidden: { opacity: 0, y: 20 },
-                show: { opacity: 1, y: 0 }
-              }}
-              className="relative group break-inside-avoid sketch-border-thin overflow-hidden bg-background p5-shadow transition-all duration-300 hover:p5-shadow hover:-translate-y-1 cursor-pointer"
-              onClick={() => setSelectedPhoto(photo)}
-            >
-              <div className="relative w-full h-auto">
-                <Image
-                  src={photo.url}
-                  alt={photo.name}
-                  width={600}
-                  height={400}
-                  className="w-full h-auto object-cover grayscale transition-all duration-500 group-hover:grayscale-0 group-hover:scale-105"
-                  sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
-                  unoptimized={true} // Using unoptimized for Nextcloud proxy performance for now
+        <div className="gallery-container">
+          <RowsPhotoAlbum 
+            photos={albumPhotos}
+            targetRowHeight={300}
+            onClick={({ photo }) => setSelectedPhoto((photo as any).original)}
+            render={{
+              wrapper: ({ style, children }) => (
+                <div 
+                  style={style} 
+                  className="relative group overflow-hidden sketch-border-thin bg-background transition-all duration-300 hover:z-10 hover:p5-shadow hover:-translate-y-1 cursor-pointer"
+                >
+                  {children}
+                </div>
+              ),
+              image: ({ alt, src, style }) => (
+                <img
+                  src={src}
+                  alt={alt}
+                  style={style}
+                  className="w-full h-full object-cover grayscale transition-all duration-500 group-hover:grayscale-0 group-hover:scale-105"
+                  loading="lazy"
                 />
-              </div>
-              <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                <ZoomIn className="text-white w-10 h-10 drop-shadow-md" />
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
+              )
+            }}
+          />
+        </div>
       )}
 
       {/* Lightbox Modal */}
