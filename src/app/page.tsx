@@ -1,65 +1,46 @@
-import Image from "next/image";
+import { fetchPhotos } from "@/lib/nextcloud";
+import GalleryClient from "@/components/GalleryClient";
 
-export default function Home() {
+export const revalidate = 3600; // revalidate every hour
+
+export default async function Home() {
+  const photos = await fetchPhotos();
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="relative min-h-screen w-full overflow-hidden flex flex-col items-center p-8 bg-background">
+      {/* Da Vinci sketch / grid background layout */}
+      <div
+        className="fixed inset-0 pointer-events-none opacity-20 dark:opacity-5 z-0"
+        style={{
+          backgroundImage: `linear-gradient(to right, var(--color-foreground) 1px, transparent 1px), linear-gradient(to bottom, var(--color-foreground) 1px, transparent 1px)`,
+          backgroundSize: '4rem 4rem',
+          maskImage: 'radial-gradient(ellipse at center, black 40%, transparent 80%)',
+          WebkitMaskImage: 'radial-gradient(ellipse at center, black 40%, transparent 80%)'
+        }}
+      />
+
+      <div className="relative z-10 flex flex-col items-center w-full max-w-7xl mt-12 mb-16 gap-12">
+        {/* Header */}
+        <div className="relative flex flex-col items-center">
+          <div className="relative">
+            <h1 className="text-5xl md:text-8xl font-black uppercase leading-none tracking-tighter text-foreground p5-skew px-8 py-6 sketch-border bg-background/90 backdrop-blur-md p5-shadow">
+              Gallery
+            </h1>
+            <div className="absolute -bottom-4 -right-4 md:-bottom-6 md:-right-6 bg-primary text-primary-foreground text-xl md:text-2xl font-black uppercase p-3 md:p-4 sketch-border shadow-xl rotate-[4deg] hover:rotate-[2deg] transition-all cursor-default whitespace-nowrap">
+              Visuals
+            </div>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+
+        {/* Client Gallery Grid */}
+        <GalleryClient photos={photos} />
+      </div>
+      
+      {/* Decorative Technical Text - Da Vinci notes vibe */}
+      <div className="fixed bottom-8 left-8 text-xs font-mono opacity-50 uppercase tracking-[0.2em] hidden md:block z-0 pointer-events-none">
+        // FIG. 2 - LIGHTBOX METRICS<br />
+        SOURCE: nc.vrbl.win
+      </div>
+    </main>
   );
 }
