@@ -12,6 +12,7 @@ import { NextcloudFile } from "@/lib/nextcloud";
 
 export default function GalleryClient({ photos }: { photos: NextcloudFile[] }) {
   const [index, setIndex] = useState(-1);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   const albumPhotos = photos.map(p => ({
     src: p.url,
@@ -39,24 +40,47 @@ export default function GalleryClient({ photos }: { photos: NextcloudFile[] }) {
             spacing={4}
             onClick={({ index }) => setIndex(index)}
             render={{
-              wrapper: ({ style, children }) => (
-                <div 
-                  style={style} 
-                  className="photo-wrapper relative overflow-hidden bg-muted transition-all duration-300 cursor-pointer"
-                >
-                  {children}
-                  <div className="rose-overlay absolute inset-0 transition-opacity duration-300 z-10 pointer-events-none" />
-                </div>
-              ),
-              image: ({ alt, src, style }) => (
-                <img
-                  src={src}
-                  alt={alt}
-                  style={style}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-              )
+              wrapper: (props, context) => {
+                const { style, children, ...rest } = props;
+                const photoIndex = context.index;
+                const isHovered = hoveredIndex === photoIndex;
+                const isAnyHovered = hoveredIndex !== null;
+                const opacity = isAnyHovered && !isHovered ? 0.5 : 1;
+
+                return (
+                  <div 
+                    {...rest}
+                    style={{ ...style, opacity, transition: 'all 0.3s' }}
+                    onMouseEnter={() => setHoveredIndex(photoIndex)}
+                    onMouseLeave={() => setHoveredIndex(null)}
+                    className="relative overflow-hidden bg-muted cursor-pointer"
+                  >
+                    {children}
+                    <div 
+                      style={{ opacity: isHovered ? 1 : 0, transition: 'opacity 0.3s' }}
+                      className="absolute inset-0 bg-rose-500/25 z-10 pointer-events-none" 
+                    />
+                  </div>
+                );
+              },
+              image: (props, context) => {
+                const { alt, src, style, ...rest } = props;
+                const isHovered = hoveredIndex === context.index;
+                return (
+                  <img
+                    {...rest}
+                    src={src}
+                    alt={alt}
+                    style={{ 
+                      ...style, 
+                      transform: isHovered ? 'scale(1.03)' : 'scale(1)', 
+                      transition: 'transform 0.5s ease-out' 
+                    }}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                );
+              }
             }}
           />
         </div>

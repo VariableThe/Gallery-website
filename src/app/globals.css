@@ -52,23 +52,3 @@
     scrollbar-width: none;
   }
 }
-
-.gallery-container:hover .photo-wrapper {
-  opacity: 0.5;
-}
-.gallery-container .photo-wrapper:hover {
-  opacity: 1 !important;
-}
-.photo-wrapper .rose-overlay {
-  opacity: 0;
-  background-color: rgba(244, 63, 94, 0.25); /* rose-500 with 25% opacity */
-}
-.photo-wrapper:hover .rose-overlay {
-  opacity: 1;
-}
-.photo-wrapper img {
-  transition: transform 0.5s ease-out;
-}
-.photo-wrapper:hover img {
-  transform: scale(1.03);
-}
