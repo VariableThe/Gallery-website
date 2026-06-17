@@ -9,7 +9,6 @@ import Fullscreen from "yet-another-react-lightbox/plugins/fullscreen";
 import Zoom from "yet-another-react-lightbox/plugins/zoom";
 
 import { NextcloudFile } from "@/lib/nextcloud";
-import "@/app/gallery.css";
 
 export default function GalleryClient({ photos }: { photos: NextcloudFile[] }) {
   const [index, setIndex] = useState(-1);
@@ -33,29 +32,30 @@ export default function GalleryClient({ photos }: { photos: NextcloudFile[] }) {
           </p>
         </div>
       ) : (
-        <div className="gallery-root">
+        <div className="gallery-container group/gallery">
           <RowsPhotoAlbum 
             photos={albumPhotos}
             targetRowHeight={350}
             spacing={4}
             onClick={({ index }) => setIndex(index)}
             render={{
-              wrapper: ({ style, children }) => (
+              image: ({ alt, src, style }) => (
                 <div 
                   style={style} 
-                  className="custom-photo-wrapper relative overflow-hidden bg-muted cursor-pointer"
+                  className="group relative overflow-hidden cursor-pointer transition-all duration-300 group-hover/gallery:opacity-50 hover:!opacity-100"
                 >
-                  {children}
-                  <div className="rose-highlight" />
+                  {/* The Actual Photo */}
+                  <img
+                    src={src}
+                    alt={alt}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                  
+                  {/* Highlight overlay (Rose tint + inner border) */}
+                  <div className="absolute inset-0 bg-rose-500/0 group-hover:bg-rose-500/30 transition-colors duration-300 pointer-events-none mix-blend-multiply z-10" />
+                  <div className="absolute inset-0 border-4 border-transparent group-hover:border-rose-500 transition-colors duration-300 pointer-events-none z-20" />
                 </div>
-              ),
-              image: ({ alt, src, style }) => (
-                <img
-                  src={src}
-                  alt={alt}
-                  style={style}
-                  loading="lazy"
-                />
               )
             }}
           />
