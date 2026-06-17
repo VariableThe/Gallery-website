@@ -42,12 +42,11 @@ export default function GalleryClient({ photos }: { photos: NextcloudFile[] }) {
               wrapper: ({ style, children }) => (
                 <div 
                   style={style} 
-                  className="relative overflow-hidden bg-muted transition-all duration-300 cursor-pointer group/photo"
+                  className="relative overflow-hidden bg-muted transition-all duration-300 cursor-pointer group/photo group-hover/gallery:opacity-50 hover:!opacity-100"
                 >
                   {children}
-                  {/* Subtle rose tint overlay on hover */}
-                  <div className="absolute inset-0 bg-rose-500/0 mix-blend-overlay group-hover/photo:bg-rose-500/30 transition-all duration-500 z-10 pointer-events-none" />
-                  <div className="absolute inset-0 bg-black/0 group-hover/photo:bg-black/5 transition-colors duration-500 z-10 pointer-events-none" />
+                  {/* Distinct rose tint overlay on hover */}
+                  <div className="absolute inset-0 bg-rose-500/0 group-hover/photo:bg-rose-500/20 transition-colors duration-300 z-10 pointer-events-none" />
                 </div>
               ),
               image: ({ alt, src, style }) => (
@@ -55,7 +54,7 @@ export default function GalleryClient({ photos }: { photos: NextcloudFile[] }) {
                   src={src}
                   alt={alt}
                   style={style}
-                  className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover/photo:scale-105"
+                  className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover/photo:scale-[1.03]"
                   loading="lazy"
                 />
               )
