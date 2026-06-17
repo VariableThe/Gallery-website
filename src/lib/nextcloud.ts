@@ -49,74 +49,113 @@ export async function fetchPhotos(): Promise<NextcloudFile[]> {
     // Response can be a single object or an array
     const items = Array.isArray(responses) ? responses : [responses];
 
-    // Process all images concurrently to speed up dimension fetching
-    const filePromises = items.map(async (item: any) => {
-      const href = item["d:href"];
-      const propstat = item["d:propstat"];
-      const props = propstat?.["d:prop"] || (Array.isArray(propstat) ? propstat[0]?.["d:prop"] : undefined);
+    // Add local JSON caching to speed up local dev and build times
+    const fs = require('fs');
+    const path = require('path');
+    const cacheDir = path.join(process.cwd(), '.next');
+    const cachePath = path.join(cacheDir, 'dimensions-cache.json');
+    
+    let dimensionsCache: Record<string, {width: number, height: number}> = {};
+    try {
+      if (!fs.existsSync(cacheDir)) {
+        fs.mkdirSync(cacheDir, { recursive: true });
+      }
+      if (fs.existsSync(cachePath)) {
+        dimensionsCache = JSON.parse(fs.readFileSync(cachePath, 'utf8'));
+      }
+    } catch (e) {
+      console.warn("Could not read dimension cache", e);
+    }
+
+    const processedFiles: NextcloudFile[] = [];
+
+    // Process images in small batches to avoid overwhelming Nextcloud
+    const batchSize = 5;
+    for (let i = 0; i < items.length; i += batchSize) {
+      const batch = items.slice(i, i + batchSize);
       
-      if (!props) return null;
-      
-      const contentType = props["d:getcontenttype"];
-      
-      // Only include images
-      if (contentType && contentType.startsWith('image/')) {
-        const name = href.split('/').pop() || href;
-        const url = `/api/image?path=${encodeURIComponent(href)}`;
+      const filePromises = batch.map(async (item: any) => {
+        const href = item["d:href"];
+        const propstat = item["d:propstat"];
+        const props = propstat?.["d:prop"] || (Array.isArray(propstat) ? propstat[0]?.["d:prop"] : undefined);
         
-        let width = 600;
-        let height = 400;
+        if (!props) return null;
+        
+        const contentType = props["d:getcontenttype"];
+        
+        // Only include images
+        if (contentType && contentType.startsWith('image/')) {
+          const name = href.split('/').pop() || href;
+          const decodedName = decodeURIComponent(name);
+          const url = `/api/image?path=${encodeURIComponent(href)}`;
+          
+          let width = 600;
+          let height = 400;
 
-        try {
-          // Fetch the first 64KB of the image to determine dimensions without downloading the whole file
-          const dimResponse = await fetch(`https://nc.vrbl.win${href}`, {
-            headers: {
-              'Authorization': authHeader,
-              'Range': 'bytes=0-262144'
-            },
-            // Cache these small chunk requests aggressively as well
-            next: { revalidate: 3600 }
-          });
-
-          if (dimResponse.ok || dimResponse.status === 206) {
-            const buffer = await dimResponse.arrayBuffer();
+          // Check Cache
+          if (dimensionsCache[decodedName]) {
+            width = dimensionsCache[decodedName].width;
+            height = dimensionsCache[decodedName].height;
+          } else {
+            // Fetch if not cached
             try {
-              const dimensions = sizeOf(Buffer.from(buffer));
-              if (dimensions && dimensions.width && dimensions.height) {
-                // If EXIF orientation is 5,6,7,8 then width and height might be swapped, but image-size
-                // handles orientation in most cases. If it doesn't, this is a known limitation.
-                width = dimensions.width;
-                height = dimensions.height;
-                
-                // image-size provides orientation for JPEGs
-                if (dimensions.orientation && dimensions.orientation >= 5) {
-                   width = dimensions.height;
-                   height = dimensions.width;
+              const dimResponse = await fetch(`https://nc.vrbl.win${href}`, {
+                headers: {
+                  'Authorization': authHeader,
+                  'Range': 'bytes=0-262144'
+                },
+                next: { revalidate: 3600 }
+              });
+
+              if (dimResponse.ok || dimResponse.status === 206) {
+                const buffer = await dimResponse.arrayBuffer();
+                try {
+                  const dimensions = sizeOf(Buffer.from(buffer));
+                  if (dimensions && dimensions.width && dimensions.height) {
+                    width = dimensions.width;
+                    height = dimensions.height;
+                    
+                    if (dimensions.orientation && dimensions.orientation >= 5) {
+                       width = dimensions.height;
+                       height = dimensions.width;
+                    }
+                    // Save to cache
+                    dimensionsCache[decodedName] = { width, height };
+                  }
+                } catch (e) {
+                  // Silent fail for corrupt JPGs
                 }
               }
             } catch (e) {
-              console.warn("Could not parse dimensions for", name, e);
+              console.warn("Failed to fetch range for dimensions", decodedName);
             }
           }
-        } catch (e) {
-          console.warn("Failed to fetch range for dimensions", name, e);
+
+          return {
+            name: decodedName,
+            url: url,
+            lastModified: props["d:getlastmodified"],
+            contentType: contentType,
+            size: parseInt(props["d:getcontentlength"] || "0", 10),
+            width,
+            height
+          } as NextcloudFile;
         }
+        return null;
+      });
 
-        return {
-          name: decodeURIComponent(name),
-          url: url,
-          lastModified: props["d:getlastmodified"],
-          contentType: contentType,
-          size: parseInt(props["d:getcontentlength"] || "0", 10),
-          width,
-          height
-        } as NextcloudFile;
-      }
-      return null;
-    });
+      const results = await Promise.all(filePromises);
+      processedFiles.push(...(results.filter(Boolean) as NextcloudFile[]));
+    }
 
-    const files = (await Promise.all(filePromises)).filter(Boolean) as NextcloudFile[];
-    return files;
+    // Save updated cache
+    try {
+      fs.writeFileSync(cachePath, JSON.stringify(dimensionsCache, null, 2));
+    } catch (e) {
+      console.warn("Could not write dimension cache", e);
+    }
+
+    return processedFiles;
   } catch (error) {
     console.error("Error fetching photos:", error);
     return [];
