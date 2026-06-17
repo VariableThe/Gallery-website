@@ -27,45 +27,60 @@ function InteractivePhoto({ wrapperProps }: { wrapperProps: any }) {
       style={{
         ...wrapperProps.style,
         position: "relative",
-        overflow: "hidden",
+        // Crucially, visible overflow allows the scaled image to pop out of its grid cell
+        overflow: "visible", 
         cursor: "pointer",
-        zIndex: hovered ? 10 : 1,
+        zIndex: hovered ? 50 : 1, // Pop above siblings
       }}
       className={wrapperProps.className || ""}
     >
-      {React.cloneElement(wrapperProps.children as React.ReactElement, {
-        style: {
-          ...(wrapperProps.children as React.ReactElement).props.style,
-          transition: "transform 0.4s ease-out",
-          transform: hovered ? "scale(1.05)" : "scale(1)",
-        }
-      })}
+      <div 
+        style={{
+          width: "100%",
+          height: "100%",
+          position: "relative",
+          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          transform: hovered ? "scale(1.08)" : "scale(1)",
+          boxShadow: hovered ? "0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2)" : "none",
+          borderRadius: hovered ? "8px" : "0px",
+          overflow: "hidden", // Clip the image inside this scaling container
+        }}
+      >
+        {/* Render the original react-photo-album image inside our scaling container */}
+        {React.cloneElement(wrapperProps.children as React.ReactElement, {
+          style: {
+            ...(wrapperProps.children as React.ReactElement).props.style,
+            width: "100%",
+            height: "100%",
+          }
+        })}
 
-      {/* Rose Tint Overlay */}
-      <div
-        style={{
-          position: "absolute",
-          top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: "rgba(244, 63, 94, 0.4)",
-          mixBlendMode: "multiply",
-          opacity: hovered ? 1 : 0,
-          transition: "opacity 0.3s ease",
-          pointerEvents: "none",
-          zIndex: 10,
-        }}
-      />
-      {/* Rose Border */}
-      <div
-        style={{
-          position: "absolute",
-          top: 0, left: 0, right: 0, bottom: 0,
-          border: "4px solid #f43f5e",
-          opacity: hovered ? 1 : 0,
-          transition: "opacity 0.3s ease",
-          pointerEvents: "none",
-          zIndex: 20,
-        }}
-      />
+        {/* Rose Tint Overlay */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: "rgba(244, 63, 94, 0.25)", // Subtle rose wash
+            opacity: hovered ? 1 : 0,
+            transition: "opacity 0.3s ease",
+            pointerEvents: "none",
+            zIndex: 10,
+          }}
+        />
+        {/* Solid Rose Border */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0, left: 0, right: 0, bottom: 0,
+            border: "4px solid #f43f5e", // Distinct rose border
+            borderRadius: "8px",
+            opacity: hovered ? 1 : 0,
+            transition: "opacity 0.3s ease",
+            pointerEvents: "none",
+            zIndex: 20,
+          }}
+        />
+      </div>
     </div>
   );
 }
