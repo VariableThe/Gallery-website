@@ -1,21 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
 import { RowsPhotoAlbum } from "react-photo-album";
 import "react-photo-album/rows.css";
+import Lightbox from "yet-another-react-lightbox";
+import "yet-another-react-lightbox/styles.css";
+import Fullscreen from "yet-another-react-lightbox/plugins/fullscreen";
+import Zoom from "yet-another-react-lightbox/plugins/zoom";
+
 import { NextcloudFile } from "@/lib/nextcloud";
 
 export default function GalleryClient({ photos }: { photos: NextcloudFile[] }) {
-  const [selectedPhoto, setSelectedPhoto] = useState<NextcloudFile | null>(null);
+  const [index, setIndex] = useState(-1);
 
   const albumPhotos = photos.map(p => ({
     src: p.url,
     width: p.width || 600,
     height: p.height || 400,
     alt: p.name,
-    original: p // keep original for lightbox
   }));
 
   return (
@@ -35,7 +37,7 @@ export default function GalleryClient({ photos }: { photos: NextcloudFile[] }) {
             photos={albumPhotos}
             targetRowHeight={350}
             spacing={4}
-            onClick={({ photo }) => setSelectedPhoto((photo as any).original)}
+            onClick={({ index }) => setIndex(index)}
             render={{
               wrapper: ({ style, children }) => (
                 <div 
@@ -43,8 +45,9 @@ export default function GalleryClient({ photos }: { photos: NextcloudFile[] }) {
                   className="relative overflow-hidden bg-muted transition-all duration-300 cursor-pointer group/photo"
                 >
                   {children}
-                  {/* Subtle hover overlay */}
-                  <div className="absolute inset-0 bg-black/0 group-hover/photo:bg-black/10 transition-colors duration-300 z-10 pointer-events-none" />
+                  {/* Subtle rose tint overlay on hover */}
+                  <div className="absolute inset-0 bg-rose-500/0 mix-blend-overlay group-hover/photo:bg-rose-500/30 transition-all duration-500 z-10 pointer-events-none" />
+                  <div className="absolute inset-0 bg-black/0 group-hover/photo:bg-black/5 transition-colors duration-500 z-10 pointer-events-none" />
                 </div>
               ),
               image: ({ alt, src, style }) => (
@@ -52,7 +55,7 @@ export default function GalleryClient({ photos }: { photos: NextcloudFile[] }) {
                   src={src}
                   alt={alt}
                   style={style}
-                  className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover/photo:scale-[1.02]"
+                  className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover/photo:scale-105"
                   loading="lazy"
                 />
               )
@@ -61,49 +64,25 @@ export default function GalleryClient({ photos }: { photos: NextcloudFile[] }) {
         </div>
       )}
 
-      {/* Lightbox Modal */}
-      <AnimatePresence>
-        {selectedPhoto && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/95 backdrop-blur-sm"
-            onClick={() => setSelectedPhoto(null)}
-          >
-            <button
-              className="absolute top-6 right-6 z-50 p-3 text-foreground/50 hover:text-foreground hover:bg-foreground/5 rounded-full transition-colors"
-              onClick={() => setSelectedPhoto(null)}
-            >
-              <X className="w-6 h-6 stroke-[1.5]" />
-            </button>
-
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.98 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
-              className="relative max-w-[95vw] max-h-[90vh] flex flex-col items-center justify-center"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="relative w-full h-full flex items-center justify-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={selectedPhoto.url}
-                  alt={selectedPhoto.name}
-                  className="max-w-full max-h-full object-contain rounded-md"
-                  style={{ boxShadow: "0 10px 40px -10px rgba(0,0,0,0.1)" }}
-                />
-              </div>
-              
-              <div className="absolute -bottom-10 left-0 right-0 text-center text-sm font-medium text-foreground/40 tracking-wide">
-                {selectedPhoto.name}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Advanced Lightbox */}
+      <Lightbox
+        slides={albumPhotos}
+        open={index >= 0}
+        index={index}
+        close={() => setIndex(-1)}
+        plugins={[Fullscreen, Zoom]}
+        zoom={{
+          maxZoomPixelRatio: 3,
+          zoomInMultiplier: 2,
+          doubleTapDelay: 300,
+          doubleClickDelay: 300,
+          doubleClickMaxStops: 2,
+          keyboardMoveDistance: 50,
+          wheelZoomDistanceFactor: 100,
+          pinchZoomDistanceFactor: 100,
+          scrollToZoom: true,
+        }}
+      />
     </div>
   );
 }
