@@ -52,3 +52,11 @@
     scrollbar-width: none;
   }
 }
+
+/* Sibling Dimming for Gallery */
+.gallery-container:hover .interactive-photo-wrapper {
+  opacity: 0.5;
+}
+.gallery-container .interactive-photo-wrapper:hover {
+  opacity: 1 !important;
+}

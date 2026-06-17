@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { RowsPhotoAlbum } from "react-photo-album";
 import "react-photo-album/rows.css";
 import Lightbox from "yet-another-react-lightbox";
@@ -9,6 +9,66 @@ import Fullscreen from "yet-another-react-lightbox/plugins/fullscreen";
 import Zoom from "yet-another-react-lightbox/plugins/zoom";
 
 import { NextcloudFile } from "@/lib/nextcloud";
+
+function InteractivePhoto({ wrapperProps }: { wrapperProps: any }) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <div
+      {...wrapperProps}
+      onMouseEnter={(e) => {
+        setHovered(true);
+        wrapperProps.onMouseEnter?.(e);
+      }}
+      onMouseLeave={(e) => {
+        setHovered(false);
+        wrapperProps.onMouseLeave?.(e);
+      }}
+      style={{
+        ...wrapperProps.style,
+        position: "relative",
+        overflow: "hidden",
+        cursor: "pointer",
+        zIndex: hovered ? 10 : 1,
+      }}
+      className={wrapperProps.className || ""}
+    >
+      {React.cloneElement(wrapperProps.children as React.ReactElement, {
+        style: {
+          ...(wrapperProps.children as React.ReactElement).props.style,
+          transition: "transform 0.4s ease-out",
+          transform: hovered ? "scale(1.05)" : "scale(1)",
+        }
+      })}
+
+      {/* Rose Tint Overlay */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: "rgba(244, 63, 94, 0.4)",
+          mixBlendMode: "multiply",
+          opacity: hovered ? 1 : 0,
+          transition: "opacity 0.3s ease",
+          pointerEvents: "none",
+          zIndex: 10,
+        }}
+      />
+      {/* Rose Border */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0, left: 0, right: 0, bottom: 0,
+          border: "4px solid #f43f5e",
+          opacity: hovered ? 1 : 0,
+          transition: "opacity 0.3s ease",
+          pointerEvents: "none",
+          zIndex: 20,
+        }}
+      />
+    </div>
+  );
+}
 
 export default function GalleryClient({ photos }: { photos: NextcloudFile[] }) {
   const [index, setIndex] = useState(-1);
@@ -32,31 +92,14 @@ export default function GalleryClient({ photos }: { photos: NextcloudFile[] }) {
           </p>
         </div>
       ) : (
-        <div className="gallery-container group/gallery">
+        <div className="gallery-container">
           <RowsPhotoAlbum 
             photos={albumPhotos}
             targetRowHeight={350}
             spacing={4}
             onClick={({ index }) => setIndex(index)}
             render={{
-              wrapper: (props) => (
-                <div 
-                  {...props} 
-                  className={`group relative overflow-hidden cursor-pointer transition-all duration-300 group-hover/gallery:opacity-50 hover:!opacity-100 ${props.className || ''}`}
-                >
-                  {props.children}
-                  
-                  {/* Highlight overlay (Rose tint + inner border) */}
-                  <div className="absolute inset-0 bg-rose-500/0 group-hover:bg-rose-500/40 transition-colors duration-300 pointer-events-none mix-blend-multiply z-10" />
-                  <div className="absolute inset-0 border-[3px] border-transparent group-hover:border-rose-500 transition-colors duration-300 pointer-events-none z-20" />
-                </div>
-              ),
-              image: (props) => (
-                <img 
-                  {...props} 
-                  className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04] ${props.className || ''}`}
-                />
-              )
+              wrapper: (props) => <InteractivePhoto wrapperProps={props} />
             }}
           />
         </div>
