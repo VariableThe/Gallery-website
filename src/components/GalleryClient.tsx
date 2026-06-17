@@ -9,6 +9,7 @@ import Fullscreen from "yet-another-react-lightbox/plugins/fullscreen";
 import Zoom from "yet-another-react-lightbox/plugins/zoom";
 
 import { NextcloudFile } from "@/lib/nextcloud";
+import "@/app/gallery.css";
 
 export default function GalleryClient({ photos }: { photos: NextcloudFile[] }) {
   const [index, setIndex] = useState(-1);
@@ -32,28 +33,7 @@ export default function GalleryClient({ photos }: { photos: NextcloudFile[] }) {
           </p>
         </div>
       ) : (
-        <div className="gallery-container">
-          <style dangerouslySetInnerHTML={{ __html: `
-            .gallery-container:hover .photo-wrapper {
-              opacity: 0.5;
-            }
-            .gallery-container .photo-wrapper:hover {
-              opacity: 1 !important;
-            }
-            .photo-wrapper .rose-overlay {
-              opacity: 0;
-              background-color: rgba(244, 63, 94, 0.25);
-            }
-            .photo-wrapper:hover .rose-overlay {
-              opacity: 1;
-            }
-            .photo-wrapper img {
-              transition: transform 0.3s ease-out !important;
-            }
-            .photo-wrapper:hover img {
-              transform: scale(1.03) !important;
-            }
-          `}} />
+        <div className="gallery-root">
           <RowsPhotoAlbum 
             photos={albumPhotos}
             targetRowHeight={350}
@@ -63,10 +43,10 @@ export default function GalleryClient({ photos }: { photos: NextcloudFile[] }) {
               wrapper: ({ style, children }) => (
                 <div 
                   style={style} 
-                  className="photo-wrapper relative overflow-hidden bg-muted transition-all duration-300 cursor-pointer"
+                  className="custom-photo-wrapper relative overflow-hidden bg-muted cursor-pointer"
                 >
                   {children}
-                  <div className="rose-overlay absolute inset-0 transition-opacity duration-300 z-10 pointer-events-none" />
+                  <div className="rose-highlight" />
                 </div>
               ),
               image: ({ alt, src, style }) => (
@@ -74,7 +54,6 @@ export default function GalleryClient({ photos }: { photos: NextcloudFile[] }) {
                   src={src}
                   alt={alt}
                   style={style}
-                  className="w-full h-full object-cover"
                   loading="lazy"
                 />
               )
