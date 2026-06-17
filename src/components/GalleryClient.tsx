@@ -39,23 +39,23 @@ export default function GalleryClient({ photos }: { photos: NextcloudFile[] }) {
             spacing={4}
             onClick={({ index }) => setIndex(index)}
             render={{
-              image: ({ alt, src, style }) => (
+              wrapper: (props) => (
                 <div 
-                  style={style} 
-                  className="group relative overflow-hidden cursor-pointer transition-all duration-300 group-hover/gallery:opacity-50 hover:!opacity-100"
+                  {...props} 
+                  className={`group relative overflow-hidden cursor-pointer transition-all duration-300 group-hover/gallery:opacity-50 hover:!opacity-100 ${props.className || ''}`}
                 >
-                  {/* The Actual Photo */}
-                  <img
-                    src={src}
-                    alt={alt}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    loading="lazy"
-                  />
+                  {props.children}
                   
                   {/* Highlight overlay (Rose tint + inner border) */}
-                  <div className="absolute inset-0 bg-rose-500/0 group-hover:bg-rose-500/30 transition-colors duration-300 pointer-events-none mix-blend-multiply z-10" />
-                  <div className="absolute inset-0 border-4 border-transparent group-hover:border-rose-500 transition-colors duration-300 pointer-events-none z-20" />
+                  <div className="absolute inset-0 bg-rose-500/0 group-hover:bg-rose-500/40 transition-colors duration-300 pointer-events-none mix-blend-multiply z-10" />
+                  <div className="absolute inset-0 border-[3px] border-transparent group-hover:border-rose-500 transition-colors duration-300 pointer-events-none z-20" />
                 </div>
+              ),
+              image: (props) => (
+                <img 
+                  {...props} 
+                  className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04] ${props.className || ''}`}
+                />
               )
             }}
           />
